@@ -1,0 +1,110 @@
+-- > View all shipment records
+SELECT * FROM shipments;
+
+-- > Filter shipments by Sales Person 'SP02'
+SELECT * FROM shipments 
+WHERE `Sales Person` = 'SP02';
+
+-- > Shipments by 'SP02' to location 'G3'
+SELECT * FROM shipments 
+WHERE `Sales Person` = 'SP02' AND Geo = 'G3';
+
+-- > All January 2023 deliveries
+SELECT * FROM shipments 
+WHERE Date >= '2023-01-01' AND Date <= '2023-01-31';
+
+-- > Shipments by selected team members
+SELECT * FROM shipments 
+WHERE `Sales Person` IN ('SP02', 'SP03', 'SP12', 'SP15');
+
+-- > Products with 'choco' in the name
+SELECT * FROM products 
+WHERE Product LIKE '%choco%';
+
+-- > People whose name starts with 'S'
+SELECT * FROM people 
+WHERE `Sales Person` LIKE 'S%';
+
+-- > Sales per box of chocolates in Feb 2023
+SELECT s.Product AS ProductName,
+       ROUND(SUM(s.Amount) / SUM(s.Boxes), 2) AS SalesPerBox
+FROM shipments s
+JOIN products p ON s.Product = p.Product
+WHERE p.Category = 'Chocolates'
+  AND s.Date BETWEEN '2023-02-01' AND '2023-02-28'
+GROUP BY s.Product;
+
+-- > Details of shipments handled by 'Subba Rao'
+SELECT * FROM shipments 
+WHERE `Sales Person` = 'Subba Rao';
+
+-- > Monthly shipment totals for 'Subba Rao'
+SELECT MONTH(Date) AS ShipmentMonth,
+       SUM(Amount) AS MonthlyTotal
+FROM shipments 
+WHERE `Sales Person` = 'Subba Rao'
+GROUP BY MONTH(Date);
+
+-- > Total amount shipped by region
+SELECT Geo AS Region,
+       SUM(Amount) AS TotalShipments
+FROM shipments 
+GROUP BY Geo;
+
+-- > Average and total of all shipments
+SELECT AVG(Amount) AS AvgShipment,
+       SUM(Amount) AS SumShipment
+FROM shipments;
+
+-- > Total shipment value by product (inner join)
+SELECT p.Product AS ProductName,
+       SUM(s.Amount) AS ShippedAmount
+FROM products p
+JOIN shipments s ON p.Product = s.Product
+GROUP BY p.Product;
+
+-- > All people and their corresponding shipments (left join)
+SELECT ppl.`Sales Person` AS RepName,
+       shp.Product,
+       shp.Amount
+FROM people ppl
+LEFT JOIN shipments shp 
+  ON ppl.`Sales Person` = shp.`Sales Person`;
+
+-- > Products with their related shipments (right join)
+SELECT prod.Product AS ProductName,
+       sh.`Sales Person` AS Rep,
+       sh.Amount
+FROM products prod
+RIGHT JOIN shipments sh ON prod.Product = sh.Product;
+
+-- > Salespersons who shipped more than the average shipment value
+SELECT DISTINCT `Sales Person`
+FROM shipments 
+WHERE Amount > (
+  SELECT AVG(Amount) FROM shipments
+);
+
+-- > Regions with shipment totals greater than 20000
+SELECT Geo AS Zone,
+       SUM(Amount) AS TotalSent
+FROM shipments 
+GROUP BY Geo
+HAVING SUM(Amount) > 20000;
+
+-- > Create a summary view of sales per sales person
+DROP VIEW IF EXISTS Sales_Overview;
+CREATE VIEW Sales_Overview AS
+SELECT `Sales Person` AS Rep,
+       SUM(Amount) AS TotalSales
+FROM shipments 
+GROUP BY `Sales Person`;
+
+-- > View summary from Sales_Overview
+SELECT * FROM Sales_Overview;
+
+-- > Create index on Amount column for performance
+CREATE INDEX index_amount ON shipments(Amount);
+
+-- > Display all indexes created on the 'shipments' table
+SHOW INDEXES FROM shipments;
